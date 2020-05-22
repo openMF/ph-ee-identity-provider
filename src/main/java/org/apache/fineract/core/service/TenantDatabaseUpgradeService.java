@@ -109,14 +109,17 @@ public class TenantDatabaseUpgradeService {
 
     private void insertTenants() {
         for(String tenant : tenants) {
-            TenantServerConnection tenantServerConnection = new TenantServerConnection();
-            tenantServerConnection.setSchemaName(tenant);
-            tenantServerConnection.setSchemaServer(hostname);
-            tenantServerConnection.setSchemaServerPort(String.valueOf(port));
-            tenantServerConnection.setSchemaUsername(username);
-            tenantServerConnection.setSchemaPassword(password);
-            tenantServerConnection.setAutoUpdateEnabled(true);
-            repository.saveAndFlush(tenantServerConnection);
+            TenantServerConnection existingTenant = repository.findOneBySchemaName(tenant);
+            if(existingTenant == null) {
+                TenantServerConnection tenantServerConnection = new TenantServerConnection();
+                tenantServerConnection.setSchemaName(tenant);
+                tenantServerConnection.setSchemaServer(hostname);
+                tenantServerConnection.setSchemaServerPort(String.valueOf(port));
+                tenantServerConnection.setSchemaUsername(username);
+                tenantServerConnection.setSchemaPassword(password);
+                tenantServerConnection.setAutoUpdateEnabled(true);
+                repository.saveAndFlush(tenantServerConnection);
+            }
         }
     }
 
