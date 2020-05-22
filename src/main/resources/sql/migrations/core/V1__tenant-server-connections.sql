@@ -30,10 +30,3 @@ create table tenant_server_connections(
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 AUTO_INCREMENT=1;
-
-LOCK TABLES `tenant_server_connections` WRITE;
-/*!40000 ALTER TABLE `tenant_server_connections` DISABLE KEYS */;
-INSERT INTO `tenant_server_connections` (`id`, `schema_server`, `schema_name`, `schema_server_port`, `schema_username`, `schema_password`, `auto_update`) VALUES (1, '${dbHost}', 'tn01', '${dbPort}', '${dbUserName}', '${dbPassword}', 1);
-INSERT INTO `tenant_server_connections` (`id`, `schema_server`, `schema_name`, `schema_server_port`, `schema_username`, `schema_password`, `auto_update`) VALUES (2, '${dbHost}', 'tn02', '${dbPort}', '${dbUserName}', '${dbPassword}', 1);
-/*!40000 ALTER TABLE `tenant_server_connections` ENABLE KEYS */;
-UNLOCK TABLES;

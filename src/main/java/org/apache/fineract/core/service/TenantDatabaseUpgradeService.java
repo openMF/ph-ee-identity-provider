@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.apache.fineract.config.ResourceServerConfig.IDENTITY_PROVIDER_RESOURCE_ID;
@@ -71,24 +72,32 @@ public class TenantDatabaseUpgradeService {
     @Value("${token.refresh.validity-seconds}")
     private String tokenRefreshValiditySeconds;
 
+    @Value("#{'${tenants}'.split(',')}")
+    private List<String> tenants;
+
     @PostConstruct
-    public void upgradeAllTenants() {
-        upgradeDefaultSchema();
+    public void setupEnvironment() {
+        flywayDefaultSchema();
+        insertTenants();
+        flywayTenants();
+    }
+
+    private void flywayTenants() {
         for (TenantServerConnection tenant : repository.findAll()) {
             if (tenant.isAutoUpdateEnabled()) {
                 try {
                     ThreadLocalContextUtil.setTenant(tenant);
-                    final Flyway flyway = new Flyway();
-                    flyway.setDataSource(dataSourcePerTenantService.retrieveDataSource());
-                    flyway.setLocations("sql/migrations/tenant");
-                    flyway.setOutOfOrder(true);
+                    final Flyway fw = new Flyway();
+                    fw.setDataSource(dataSourcePerTenantService.retrieveDataSource());
+                    fw.setLocations("sql/migrations/tenant");
+                    fw.setOutOfOrder(true);
                     Map<String, String> placeholders = new HashMap<>();
-                    placeholders.put("tenantDatabase", tenant.getSchemaName());
+                    placeholders.put("tenantDatabase", tenant.getSchemaName()); // add tenant as aud claim
                     placeholders.put("accessTokenValidity", tokenAccessValiditySeconds);
                     placeholders.put("refreshTokenValidity", tokenRefreshValiditySeconds);
-                    placeholders.put("identityProviderResourceId", IDENTITY_PROVIDER_RESOURCE_ID);
-                    flyway.setPlaceholders(placeholders);
-                    flyway.migrate();
+                    placeholders.put("identityProviderResourceId", IDENTITY_PROVIDER_RESOURCE_ID); // add identity provider as aud claim
+                    fw.setPlaceholders(placeholders);
+                    fw.migrate();
                 } catch (Exception e) {
                     logger.error("Error when running flyway on tenant: {}", tenant.getSchemaName(), e);
                 } finally {
@@ -98,18 +107,24 @@ public class TenantDatabaseUpgradeService {
         }
     }
 
-    private void upgradeDefaultSchema() {
-        final Flyway flyway = new Flyway();
-        flyway.setDataSource(dataSourcePerTenantService.retrieveDataSource());
-        flyway.setLocations("sql/migrations/core");
-        flyway.setOutOfOrder(true);
-        // flyway variables
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("dbHost", hostname);
-        placeholders.put("dbPort", String.valueOf(port));
-        placeholders.put("dbUserName", username);
-        placeholders.put("dbPassword", password);
-        flyway.setPlaceholders(placeholders);
-        flyway.migrate();
+    private void insertTenants() {
+        for(String tenant : tenants) {
+            TenantServerConnection tenantServerConnection = new TenantServerConnection();
+            tenantServerConnection.setSchemaName(tenant);
+            tenantServerConnection.setSchemaServer(hostname);
+            tenantServerConnection.setSchemaServerPort(String.valueOf(port));
+            tenantServerConnection.setSchemaUsername(username);
+            tenantServerConnection.setSchemaPassword(password);
+            tenantServerConnection.setAutoUpdateEnabled(true);
+            repository.saveAndFlush(tenantServerConnection);
+        }
+    }
+
+    private void flywayDefaultSchema() {
+        final Flyway fw = new Flyway();
+        fw.setDataSource(dataSourcePerTenantService.retrieveDataSource());
+        fw.setLocations("sql/migrations/core");
+        fw.setOutOfOrder(true);
+        fw.migrate();
     }
 }
