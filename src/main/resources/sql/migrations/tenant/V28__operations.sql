@@ -20,6 +20,7 @@ CREATE TABLE `tasks` (
   `WORKFLOW_INSTANCE_KEY` bigint(20) DEFAULT NULL,
   `WORKFLOW_KEY` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`ID`)
+  KEY `idx_tasksKey` (`WORKFLOW_INSTANCE_KEY`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `transfers` (
@@ -46,7 +47,7 @@ CREATE TABLE `transfers` (
   `TRANSACTION_ID` varchar(255) DEFAULT NULL,
   `WORKFLOW_INSTANCE_KEY` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  KEY `idx_paymentProcessId` (`WORKFLOW_INSTANCE_KEY`)
+  KEY `idx_transfersKey` (`WORKFLOW_INSTANCE_KEY`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `variables` (
@@ -57,5 +58,5 @@ CREATE TABLE `variables` (
   `WORKFLOW_INSTANCE_KEY` bigint(20) DEFAULT NULL,
   `WORKFLOW_KEY` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  KEY `idx_workflowInstanceKey` (`WORKFLOW_INSTANCE_KEY`)
+  KEY `idx_variablesKey` (`WORKFLOW_INSTANCE_KEY`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
